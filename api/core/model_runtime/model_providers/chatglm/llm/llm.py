@@ -264,6 +264,9 @@ class ChatGLMLargeLanguageModel(LargeLanguageModel):
                                               prompt_messages: list[PromptMessage],
                                               tools: Optional[list[PromptMessageTool]] = None) \
             -> Generator:
+        
+        full_response = ''
+
         for chunk in response:
             if len(chunk.choices) == 0:
                 continue
@@ -284,10 +287,20 @@ class ChatGLMLargeLanguageModel(LargeLanguageModel):
             )
 
             if delta.finish_reason is not None:
-                usage = self._calc_response_usage(model=model, credentials=credentials, prompt_tokens=0, completion_tokens=0)
+                # temp_assistant_prompt_message is used to calculate usage
+                temp_assistant_prompt_message = AssistantPromptMessage(
+                    content=full_response,
+                    tool_calls=assistant_message_tool_calls
+                )
+                prompt_tokens = self._num_tokens_from_messages(messages=prompt_messages, tools=tools)
+                completion_tokens = self._num_tokens_from_messages(messages=[temp_assistant_prompt_message], tools=[])
+
+                usage = self._calc_response_usage(model=model, credentials=credentials, 
+                                                  prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
                 
                 yield LLMResultChunk(
                     model=model,
+                    prompt_messages=prompt_messages,
                     system_fingerprint=chunk.system_fingerprint,
                     delta=LLMResultChunkDelta(
                         index=delta.index,
@@ -299,12 +312,15 @@ class ChatGLMLargeLanguageModel(LargeLanguageModel):
             else:
                 yield LLMResultChunk(
                     model=model,
+                    prompt_messages=prompt_messages,
                     system_fingerprint=chunk.system_fingerprint,
                     delta=LLMResultChunkDelta(
                         index=delta.index,
                         message=assistant_prompt_message,
                     )
                 )
+
+                full_response += delta.delta.content
         
     def _handle_chat_generate_response(self, model: str, credentials: dict, response: ChatCompletion,
                                        prompt_messages: list[PromptMessage],
@@ -345,6 +361,7 @@ class ChatGLMLargeLanguageModel(LargeLanguageModel):
 
         response = LLMResult(
             model=model,
+            prompt_messages=prompt_messages,
             system_fingerprint=response.system_fingerprint,
             usage=usage,
             message=assistant_prompt_message,

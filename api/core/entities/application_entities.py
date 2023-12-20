@@ -158,22 +158,6 @@ class SensitiveWordAvoidanceEntity(BaseModel):
     config: dict[str, Any] = {}
 
 
-class AnnotationReplyEmbeddingModelEntity(BaseModel):
-    """
-    Annotation Reply Embedding Model Entity.
-    """
-    provider: str
-    model: str
-
-
-class AnnotationReplyEntity(BaseModel):
-    """
-    Annotation Reply Entity.
-    """
-    score_threshold: float
-    embedding_model: AnnotationReplyEmbeddingModelEntity
-
-
 class FileUploadEntity(BaseModel):
     """
     File Upload Entity.
@@ -224,7 +208,6 @@ class AppOrchestrationConfigEntity(BaseModel):
     speech_to_text: bool = False
     show_retrieve_source: bool = False
     sensitive_word_avoidance: Optional[SensitiveWordAvoidanceEntity] = None
-    annotation_reply: Optional[AnnotationReplyEntity]
 
 
 class InvokeFrom(Enum):
@@ -250,9 +233,9 @@ class InvokeFrom(Enum):
         raise ValueError(f'invalid invoke from value {value}')
 
 
-class LLMApplicationGenerateEntity(BaseModel):
+class ApplicationGenerateEntity(BaseModel):
     """
-    LLM Application Generate Entity.
+    Application Generate Entity.
     """
     task_id: str
     tenant_id: str
@@ -280,9 +263,9 @@ class LLMApplicationGenerateEntity(BaseModel):
     extras: dict[str, Any] = {}
 
 
-class LLMApplicationGenerateResponse(BaseModel):
+class ApplicationGenerateResponse(BaseModel):
     """
-    LLM Application Generate Response.
+    Application Generate Response.
     """
     event: str = 'message'
     task_id: str
